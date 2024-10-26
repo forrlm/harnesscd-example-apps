@@ -1,0 +1,965 @@
+pipeline:
+  name: Deploy Webserver
+  identifier: Deploy_Webserver
+  projectIdentifier: default_project
+  orgIdentifier: default
+  tags: {}
+  stages:
+    - stage:
+        name: Build
+        identifier: Build_Test_Push
+        description: ""
+        type: CI
+        spec:
+          cloneCodebase: true
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Docker
+            spec: {}
+          execution:
+            steps:
+              - step:
+                  type: Run
+                  name: Environment check
+                  identifier: environment_check
+                  spec:
+                    shell: Bash
+                    command: |-
+                      #!/bin/bash
+                      <+endtime
+
+                      PWD=$(pwd)
+
+                      # Function to compare versions
+                      version_ge() {
+                          test "$(printf '%s\n' "$@" | sort -V | tail -n 1)" = "$1"
+                      }
+
+                      # Function to check tool version
+                      check_version() {
+                          tool=$1
+                          required_version=$2
+                          
+                          if ! command -v $tool &> /dev/null; then
+                              echo "$tool is not installed"
+                              exit 1
+                          fi
+
+                          if [ "$tool" = "go" ]; then
+                              version=$($tool version | awk '{print $3}' | sed 's/go//')
+                              required_version=$(echo $required_version | sed 's/go//')
+                          elif [ "$tool" = "node" ]; then
+                              version=$($tool --version | sed 's/v//')
+                              required_version=$(echo $required_version | sed 's/v//')
+                          else
+                              version=$($tool --version 2>&1 | awk '{print $NF}' | sed 's/v//')
+                          fi
+                          
+                          if version_ge $version $required_version; then
+                              echo "$tool version $version is OK (required: >=$required_version)"
+                          else
+                              echo "$tool version $version is too old (required: >=$required_version)"
+                              exit 1
+                          fi
+                      }
+
+                      # Check Go
+                      check_version "go" "go1.22.0"
+
+                      # Check Node.js
+                      check_version "node" "v16.20.0"
+
+                      # Check Yarn
+                      check_version "yarn" "1.22.0"
+
+                      # Check npm
+                      check_version "npm" "8.19.0"
+
+                      echo "All version checks passed!"
+                    outputVariables:
+                      - name: PWD
+                        type: String
+                        value: PWD
+              - stepGroup:
+                  name: SCA
+                  identifier: SCA
+                  steps:
+                    - parallel:
+                        - step:
+                            type: Owasp
+                            name: Owasp Admin
+                            identifier: Owasp
+                            spec:
+                              mode: orchestration
+                              config: default
+                              target:
+                                type: repository
+                                workspace: ./web/admin
+                                detection: auto
+                              advanced:
+                                log:
+                                  level: info
+                        - step:
+                            type: Owasp
+                            name: Owasp los
+                            identifier: Owasp_los
+                            spec:
+                              mode: orchestration
+                              config: default
+                              target:
+                                type: repository
+                                workspace: ./web/los
+                                detection: auto
+                              advanced:
+                                log:
+                                  level: info
+                        - step:
+                            type: Owasp
+                            name: Owasp content
+                            identifier: Owasp_content
+                            spec:
+                              mode: orchestration
+                              config: default
+                              target:
+                                type: repository
+                                workspace: ./web/content
+                                detection: auto
+                              advanced:
+                                log:
+                                  level: info
+                        - step:
+                            type: OsvScanner
+                            name: OsvScanner
+                            identifier: OsvScanner
+                            spec:
+                              mode: orchestration
+                              config: default
+                              target:
+                                type: repository
+                                workspace: ./web/go
+                                detection: auto
+                              advanced:
+                                log:
+                                  level: info
+                            failureStrategies:
+                              - onFailure:
+                                  errors:
+                                    - AllErrors
+                                  action:
+                                    type: Ignore
+                  failureStrategies:
+                    - onFailure:
+                        errors:
+                          - AllErrors
+                        action:
+                          type: Ignore
+              - stepGroup:
+                  name: compile
+                  identifier: comile
+                  steps:
+                    - parallel:
+                        - step:
+                            type: Run
+                            name: compile go
+                            identifier: compile_go
+                            spec:
+                              shell: Bash
+                              command: |-
+                                #!/bin/bash -ilx
+
+                                build_d=BLD
+                                [ -d $build_d ] && {
+                                    rm -rf $build_d
+                                }
+                                mkdir $build_d
+
+                                cd ./web/go/src
+
+                                CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+                                           go build -a -tags netgo -ldflags '-w -extldflags "-static"' -o "../../../$build_d/server"
+                            outputs:
+                              - name: project_path
+                                value: <+step.output.project_path>
+                        - step:
+                            type: Run
+                            name: compile content
+                            identifier: compile_content
+                            spec:
+                              shell: Bash
+                              command: |-
+                                #!/bin/bash
+                                cd ./web/content
+                                yarn install
+                                # if pgrep node > /dev/null; then
+                                #     sudo killall node
+                                # fi
+                                 sudo NODE_OPTIONS="--max-old-space-size=4096" yarn build
+                            failureStrategies:
+                              - onFailure:
+                                  errors:
+                                    - AllErrors
+                                  action:
+                                    type: Abort
+                        - step:
+                            type: Run
+                            name: compile admin
+                            identifier: compile_admin
+                            spec:
+                              shell: Bash
+                              command: |-
+                                #!/bin/bash
+
+                                cd ./web/admin
+                                yarn install
+                                # echo Build admin app
+                                sudo NODE_OPTIONS="--max-old-space-size=512" yarn run build
+                            failureStrategies:
+                              - onFailure:
+                                  errors:
+                                    - AllErrors
+                                  action:
+                                    type: Abort
+                        - step:
+                            type: Run
+                            name: compile los
+                            identifier: compile_los
+                            spec:
+                              shell: Bash
+                              command: |-
+                                #!/bin/bash
+                                cd ./web/los
+                                # if pgrep node > /dev/null; then
+                                #     sudo killall node
+                                # fi
+                                yarn install
+                                # npx browserslist@latest --update-db
+                                # npm install caniuse-lite@1.0.30001632 --save
+                                # yarn add caniuse-lite@1.0.30001632
+                                # yarn add next@13
+                                # pnpm add react
+                                # pnpm add react-scripts@^5.0.0
+                                # pnpm add bootstrap-css-only
+                                # pnpm add lodash.throttle
+                                # npx browserslist@latest --update-db
+                                echo Build los app
+
+                                sudo env NODE_OPTIONS="--max-old-space-size=9184" yarn run build
+                            failureStrategies:
+                              - onFailure:
+                                  errors:
+                                    - AllErrors
+                                  action:
+                                    type: MarkAsSuccess
+                  failureStrategies:
+                    - onFailure:
+                        errors:
+                          - AllErrors
+                        action:
+                          type: Abort
+              - stepGroup:
+                  name: Copy
+                  identifier: Copy
+                  steps:
+                    - parallel:
+                        - step:
+                            type: Run
+                            name: Copy admin
+                            identifier: Copy_admin
+                            spec:
+                              shell: Bash
+                              command: |-
+                                #!/bin/bash
+
+                                cp -r ./web/go/assets/admin ./BLD/
+                        - step:
+                            type: Run
+                            name: Copy los
+                            identifier: Copy_los
+                            spec:
+                              shell: Bash
+                              command: |-
+                                #!/bin/bash
+
+                                cp -r ./web/go/assets/loanofficer ./BLD/
+                        - step:
+                            type: Run
+                            name: Copy content
+                            identifier: Copy_content
+                            spec:
+                              shell: Sh
+                              command: |-
+                                #!/bin/bash
+
+                                cp -r ./web/go/assets/borrower ./BLD/
+                        - step:
+                            type: Run
+                            name: Copy meridianLinkXMLTemplate
+                            identifier: Copy_meridianLinkXMLTemplate
+                            spec:
+                              shell: Bash
+                              command: |-
+                                #!/bin/bash
+
+                                cp -r /home/ubuntu/meridianLinkXMLTemplate ./BLD/
+                        - step:
+                            type: Run
+                            name: Copy Dockerfile
+                            identifier: Copy_Dockerfile
+                            spec:
+                              shell: Bash
+                              command: |-
+                                #!/bin/bash
+
+                                cp ./web/go/scripts/Dockerfile ./
+                        - step:
+                            type: Run
+                            name: Remove local Image
+                            identifier: Remove_local_Image
+                            spec:
+                              shell: Bash
+                              command: |-
+                                #!/bin/bash
+
+                                #停止正在运行的容器
+                                container_id=$(sudo docker ps -q -f name=zeitro)
+                                if [ -n "$container_id" ]; then
+                                    sudo docker stop "$container_id"
+                                else
+                                    echo "Container 'zeitro' is not running."
+                                fi
+
+                                # 去重
+                                zeitro=$(sudo docker images zeitro -q | sort -u)
+
+                                # 检查 zeitro 变量是否为空，然后逐个删除镜像
+                                if [ -z "$zeitro" ]; then
+                                    echo "No zeitro image found."
+                                else
+                                    echo "Removing zeitro images with IDs:"
+                                    for id in $zeitro; do
+                                        echo "$id"
+                                        sudo docker rmi -f "$id"
+                                    done
+                                fi
+                            description: remove zeitro image
+              - step:
+                  type: BuildAndPushDockerRegistry
+                  name: Build Image
+                  identifier: Build_Image
+                  spec:
+                    connectorRef: org.AWSconnector
+                    repo: zeitro
+                    tags:
+                      - harness-webserver-<+pipeline.sequenceId>
+                    dockerfile: Dockerfile
+                    context: BLD
+                    labels:
+                      git.branch: $(git branch --show-current)
+                      git.commit: $(git rev-parse HEAD)
+                      harness.buildID: <+pipeline.sequenceId>
+                  failureStrategies:
+                    - onFailure:
+                        errors:
+                          - AllErrors
+                        action:
+                          type: Retry
+                          spec:
+                            retryCount: 3
+                            retryIntervals:
+                              - 10s
+                            onRetryFailure:
+                              action:
+                                type: MarkAsFailure
+          caching:
+            enabled: true
+            paths: []
+            override: false
+          buildIntelligence:
+            enabled: false
+        delegateSelectors:
+          - docker-delegate
+        variables:
+          - name: PLUGIN_DRY_RUN
+            type: String
+            description: build images without pushing
+            required: false
+            value: "true"
+          - name: Environment
+            type: String
+            default: staging
+            description: The environment to be deployed, staging or production
+            required: true
+            value: <+input>.default(staging).allowedValues(staging,prod)
+    - stage:
+        name: Test-Push
+        identifier: TestPush
+        description: ""
+        type: CI
+        spec:
+          cloneCodebase: false
+          platform:
+            os: Linux
+            arch: Amd64
+          runtime:
+            type: Docker
+            spec: {}
+          execution:
+            steps:
+              - step:
+                  type: GitClone
+                  name: GitClone_test api
+                  identifier: GitClone_test_api
+                  spec:
+                    connectorRef: org.zeitro
+                    depth: 1
+                    build:
+                      type: branch
+                      spec:
+                        branch: test_api
+              - stepGroup:
+                  name: Run api test
+                  identifier: Run_api_test
+                  steps:
+                    - step:
+                        type: Background
+                        name: Start local Docker
+                        identifier: Start_local_Docker
+                        spec:
+                          shell: Bash
+                          command: |-
+                            SESSION_SECRET=150f273766a7649d2b35a1bdfadc76b7
+                            DATABASE_HOST='ec2-54-219-220-220.us-west-1.compute.amazonaws.com'  # if your os is mac or win, you can use host.docker.internal, but in linux,you can not use this unless you add it to /etc/hosts,any questions please contact langran@zeitro.com
+                            DATABASE_PORT=5435
+                            DATABASE_PASSWORD='U$erZ#itr0'
+
+                            PRODUCT_SERVER='localhost:8032'
+                            STRIPE_SECRET_KEY='sk_test_51OEzY9I66V2JvOwpOKobZO4ppnujLvImm97erDkHL9kzCQZYy1bbdGo842rDIia34p7kInpOOjK6101m7Fy35D7X00dZ1iP0gR'
+                            STRIPE_PUBLISHABLE_KEY='pk_test_51OEzY9I66V2JvOwpc9hJAIZo8RxLTiPO33iv1Takv419F9AhTAxX35VfJEvyJZX02d68Uqm6WyvErE84MyNVrQzR000acdv6i1'
+                            SUBSCRIPTION_MONTHLY_PRICE_ID='price_1OeYPRI66V2JvOwpn0Z4TtOv'
+                            SUBSCRIPTION_ANNUALLY_PRICE_ID='price_1P6vquI66V2JvOwpP9SyuwGQ'
+                            SUBSCRIPTION_CREDIT_PULL_PRICE_ID='price_1P6soaI66V2JvOwp7S81chzv'
+
+                            BORROWER_HOST='app.zeitro.ai'
+                            ZEITRO_HOST='lo.zeitro.ai'
+                            ADMIN_HOST='admin.zeitro.ai'
+                            MOBILE_HOST='mobile.zeitro.ai'
+                            LANDING_HOST='zeitro.ai'
+
+                            FORM1003_SERVER='localhost:8910'
+                            MISMO_SERVER='localhost:82'
+                            ZBRAIN_SERVER='localhost:82'
+                            STREAMLINE_SERVER='localhost:83'
+
+                            container_id=$(sudo docker ps -a -q -f name=webserver_local)
+                            if [ -n "$container_id" ]; then
+                                echo "Stopping and removing existing container with name 'webserver_local'"
+                                sudo docker stop "$container_id"
+                                sleep 5s
+                                
+                                if sudo docker ps -a | grep -q "$container_id"; then
+                                    echo "Removing container with name 'webserver_local'"
+                                    sudo docker rm "$container_id"
+                                else
+                                    echo "Container 'webserver_local' has been automatically removed."
+                                fi
+                            else
+                                echo "Container 'webserver_local' is not running."
+                            fi
+
+
+                            docker run --rm -m="0.5Gb" --cpus="0.5" --name webserver_local -p 80:80 \
+                                   -e SESSION_SECRET=$SESSION_SECRET \
+                                   -e DATABASE_HOST=$DATABASE_HOST \
+                                   -e DATABASE_PORT=$DATABASE_PORT \
+                                   -e DATABASE_PASSWORD=$DATABASE_PASSWORD \
+                                   -e BORROWER_HOST=$BORROWER_HOST \
+                                   -e ZEITRO_HOST=$ZEITRO_HOST \
+                                   -e ADMIN_HOST=$ADMIN_HOST \
+                                   -e MOBILE_HOST=$MOBILE_HOST \
+                                   -e LANDING_HOST=$LANDING_HOST \
+                                   -e FORM1003_SERVER=$FORM1003_SERVER \
+                                   -e MISMO_SERVER=$MISMO_SERVER \
+                                   -e ZBRAIN_SERVER=$ZBRAIN_SERVER \
+                                   -e STREAMLINE_SERVER=$STREAMLINE_SERVER \
+                                   -e PRODUCT_SERVER=$PRODUCT_SERVER \
+                                   -e STRIPE_SECRET_KEY=$STRIPE_SECRET_KEY \
+                                   -e STRIPE_PUBLISHABLE_KEY=$STRIPE_PUBLISHABLE_KEY \
+                                   -e SUBSCRIPTION_MONTHLY_PRICE_ID=$SUBSCRIPTION_MONTHLY_PRICE_ID \
+                                   -e SUBSCRIPTION_ANNUALLY_PRICE_ID=$SUBSCRIPTION_ANNUALLY_PRICE_ID \
+                                   -e SUBSCRIPTION_CREDIT_PULL_PRICE_ID=$SUBSCRIPTION_CREDIT_PULL_PRICE_ID \
+                                   zeitro:harness-webserver-<+pipeline.sequenceId>
+                    - step:
+                        type: Run
+                        name: api test
+                        identifier: api_test
+                        spec:
+                          shell: Bash
+                          command: |-
+                            source /api-venv/bin/activate
+                            cd Dev
+
+                            pip3 install -r ./requirements.txt
+                            pytest_output=$(pytest --env=local --capture=tee-sys --log-cli-level=WARNING)
+
+                            total_passed=$(echo "$pytest_output" | grep -oP '\d+ passed' | awk '{print $1}')
+                            total_failed=$(echo "$pytest_output" | grep -oP '\d+ failed' | awk '{print $1}')
+                            total_time=$(echo "$pytest_output" | grep -oP '\d+\.\d+s' | tail -1)
+                            timeout_request=$(echo "$pytest_output" | grep -Eo '请求: \S+ 响应时间过长，当前响应时间为: [0-9]+\.[0-9]+' | awk '{print "URL: " $2 ", Response Time: " $4}')
+
+                            total_passed=${total_passed:-0}
+                            total_failed=${total_failed:-0}
+
+                            deactivate
+
+                            # additional_info="*Took:* ${total_time}"
+
+                            # if [ -n "$timeout_request" ]; then
+                            #     additional_info="${additional_info}\n*Warning:* ${timeout_request}"
+                            # fi
+
+                            # # send Slack Notify
+                            # json_payload=$(cat <<EOF
+                            # {
+                            #     "text": "*Api test* for <${executionUrl}|<+pipeline.stages.TestPush.spec.execution.steps.Run_api_test.steps.api_test.identifier.status>> *<https://app.harness.io/ng/#/account/<+account.identifier>/cd/orgs/default/projects/<+project.name>/pipelines/<+pipeline.name>/pipeline-studio|Completed>*",
+                            #     "blocks": [
+                            #         {
+                            #             "type": "section",
+                            #             "text": {
+                            #                 "type": "mrkdwn",
+                            #                 "text": "*Step:* <https://app.harness.io/ng/#/account/<+account.identifier>/cd/orgs/default/projects/<+project.name>/pipelines/<+pipeline.name>|<+pipeline.stages.TestPush.spec.execution.steps.Run_api_test.steps.api_test.name>>\n*Triggered by:* <+account.name>\n*Passed:* ${total_passed}, *Failed:* ${total_failed}, ${additional_info}"
+                            #             }
+                            #         }
+                            #     ]
+                            # }
+                            # EOF
+                            # )
+
+                            # # 调用 curl 发送 JSON 负载到 Slack Webhook
+                            # curl -X POST -H 'Content-type: application/json' \
+                            # --data "$json_payload" \
+                            # ${slackWebhook1}
+
+                            # echo total_passed: $total_passed
+                            # echo total_failed: $total_failed
+                            # echo total_time: $total_time
+                            # echo timeout_req: $timeout_req
+
+                            # export passed=total_passed
+                            # export failed=${total_failed}
+                            # export runtime=$"total_time"
+                            # export timeout_req="$timeout_request"
+
+                            # echo passed: $passed
+                            # echo failed: $failed
+                            # echo runtime: $runtime
+                            # echo timeout_req: ${timeout_req}
+                          outputVariables:
+                            - name: total_passed
+                              type: String
+                              value: total_passed
+                            - name: total_failed
+                              type: String
+                              value: failed
+                            - name: total_time
+                              type: String
+                              value: total_time
+                            - name: timeout_request
+                              type: String
+                              value: timeout_request
+                    - step:
+                        type: Run
+                        name: Test Result Notity
+                        identifier: Test_Result_Notity
+                        spec:
+                          shell: Bash
+                          command: |-
+                            #!/bin/bash
+
+                            # 生成 additional_info 信息
+                            additional_info="Took: ${total_time}"
+                            if [ -n "$timeout_request" ]; then
+                                additional_info="${additional_info}\nWarning: ${timeout_request}"
+                            fi
+
+                            json_payload=$(cat <<EOF
+                            {
+                              "blocks": [
+                                    {
+                                        "type": "section",
+                                        "text": {
+                                            "type": "mrkdwn",
+                                            "text": "*Api test <${executionUrl}|${stepStatus}> for step <${pipelineStudio}|${stepName}>*"
+                                        }
+                                    }
+                                    ],
+                                "attachments": [
+                                    {
+                                        "title": "Pipeline: <${pipelineStudio}|${pipelineName}>\n Step Stage: ${stepName}\nTriggered by: <+account.name>>\nPassed: ${total_passed}, Failed: ${total_failed}, ${additional_info}",
+                                        "color": "danger",  
+                                        "text": "*<${executionUrl}|Open Execution>*",
+                                
+                                    }
+                                ]
+                            }
+                            EOF
+                            )
+
+                            curl -X POST -H 'Content-type: application/json' \
+                            --data "$json_payload" \
+                            "${slackWebhook1}"
+                          envVariables:
+                            slackWebhook1: <+secrets.getValue("org.Slack_Webhook1")>
+                            executionUrl: <+pipeline.executionUrl>
+                            pipelineName: <+pipeline.name>
+                            pipelineStudio: https://app.harness.io/ng/account/<+account.identifier>/cd/orgs/default/projects/<+project.identifier>/pipelines/<+pipeline.identifier>/pipeline-studio
+                            stepName: <+pipeline.stages.TestPush.spec.execution.steps.Run_api_test.steps.api_test.name>
+                            stepStatus: <+pipeline.stages.TestPush.spec.execution.steps.Run_api_test.steps.api_test.status.toLowerCase()>
+                            timeout_request: <+pipeline.stages.TestPush.spec.execution.steps.Run_api_test.steps.api_test.output.outputVariables.timeout_request>
+                            total_time: <+pipeline.stages.TestPush.spec.execution.steps.Run_api_test.steps.api_test.output.outputVariables.total_time>
+                            total_passed: <+pipeline.stages.TestPush.spec.execution.steps.Run_api_test.steps.api_test.output.outputVariables.total_passed>
+                            total_failed: <+pipeline.stages.TestPush.spec.execution.steps.Run_api_test.steps.api_test.output.outputVariables.total_failed>
+                  failureStrategies:
+                    - onFailure:
+                        errors:
+                          - AllErrors
+                        action:
+                          type: Retry
+                          spec:
+                            retryCount: 2
+                            onRetryFailure:
+                              action:
+                                type: MarkAsFailure
+                            retryIntervals:
+                              - 10s
+              - stepGroup:
+                  name: Push Docker Image
+                  identifier: Push_Docker_Image
+                  steps:
+                    - parallel:
+                        - step:
+                            type: Run
+                            name: Push to ECR
+                            identifier: Push_to_ECR
+                            spec:
+                              shell: Bash
+                              command: |-
+                                #!/bin/bash
+
+                                sudo aws ecr get-login-password --region ${Region} | sudo docker login --username AWS --password-stdin ${ARN}.dkr.ecr.us-west-1.amazonaws.com
+                                sudo docker tag zeitro:harness-webserver-<+pipeline.sequenceId> ${ARN}.dkr.ecr.${Region}.amazonaws.com/${Repo}:harness-webserver-<+pipeline.sequenceId>
+                                sudo docker push ${ARN}.dkr.ecr.${Region}.amazonaws.com/${Repo}:harness-webserver-<+pipeline.sequenceId>
+                              envVariables:
+                                ARN: "670630640933"
+                                Region: us-west-1
+                                Repo: zeitro
+                        - step:
+                            type: Run
+                            name: Push to dockerHub
+                            identifier: Push_to_dockerHub
+                            spec:
+                              shell: Bash
+                              command: |-
+                                #!/bin/bash
+
+                                echo ${Password}|sudo docker login -u ${Username} --password-stdin
+                                sudo docker tag zeitro:harness-webserver-<+pipeline.sequenceId> ${Username}/${DockerHubRepo}:harness-webserver-<+pipeline.sequenceId>
+                                sudo docker push ${Username}/${DockerHubRepo}:harness-webserver-<+pipeline.sequenceId>
+                              envVariables:
+                                Username: ranlang
+                                Password: <+secrets.getValue("org.DockerHub_password")>
+                                DockerHubRepo: zeitro
+                  variables: []
+                  failureStrategies:
+                    - onFailure:
+                        errors:
+                          - AllErrors
+                        action:
+                          type: Retry
+                          spec:
+                            retryCount: 2
+                            retryIntervals:
+                              - 10s
+                            onRetryFailure:
+                              action:
+                                type: MarkAsFailure
+              - stepGroup:
+                  name: Image Scan
+                  identifier: Image_Scan
+                  steps:
+                    - parallel:
+                        - step:
+                            type: AWSECR
+                            name: ECR scan
+                            identifier: Image_scan
+                            spec:
+                              mode: extraction
+                              config: default
+                              target:
+                                type: container
+                                detection: auto
+                              advanced:
+                                log:
+                                  level: info
+                                fail_on_severity: high
+                              auth:
+                                access_token: <+secrets.getValue("org.aws_secret_key")>
+                                access_id: AKIAZYJFTPUS2YLTMTPV
+                                region: us-west-1
+                              image:
+                                domain: 670630640933.dkr.ecr.us-west-1.amazonaws.com
+                                type: aws_ecr
+                                name: zeitro
+                                region: us-west-1
+                                tag: harness-webserver-<+pipeline.sequenceId>
+                            failureStrategies:
+                              - onFailure:
+                                  errors:
+                                    - AllErrors
+                                  action:
+                                    type: Retry
+                                    spec:
+                                      retryCount: 1
+                                      retryIntervals:
+                                        - 10s
+                                      onRetryFailure:
+                                        action:
+                                          type: Ignore
+                        - stepGroup:
+                            name: Local Image Scan
+                            identifier: Local_Image_Scan
+                            steps:
+                              - parallel:
+                                  - step:
+                                      type: Background
+                                      name: dind
+                                      identifier: dind
+                                      spec:
+                                        connectorRef: account.harnessImage
+                                        image: docker:dind
+                                        shell: Sh
+                                  - step:
+                                      type: AquaTrivy
+                                      name: AquaTrivy
+                                      identifier: AquaTrivy
+                                      spec:
+                                        mode: orchestration
+                                        config: default
+                                        target:
+                                          type: container
+                                          detection: auto
+                                        advanced:
+                                          log:
+                                            level: info
+                                        privileged: true
+                                        image:
+                                          type: local_image
+                                          tag: harness-webserver-<+pipeline.sequenceId>
+                                          name: zeitro
+                                  - step:
+                                      type: Grype
+                                      name: Grype
+                                      identifier: Grype
+                                      spec:
+                                        mode: orchestration
+                                        config: default
+                                        target:
+                                          type: container
+                                          detection: auto
+                                        advanced:
+                                          log:
+                                            level: info
+                                        privileged: true
+                                        image:
+                                          type: local_image
+                                          tag: harness-webserver-<+pipeline.sequenceId>
+                                          name: zeitro
+                            failureStrategies:
+                              - onFailure:
+                                  errors:
+                                    - AllErrors
+                                  action:
+                                    type: Ignore
+                  failureStrategies:
+                    - onFailure:
+                        errors:
+                          - AllErrors
+                        action:
+                          type: Ignore
+          sharedPaths:
+            - /var/run
+    - stage:
+        name: Approval
+        identifier: Approval
+        description: ""
+        type: Approval
+        spec:
+          execution:
+            steps:
+              - step:
+                  name: deploy to prod approval
+                  identifier: deploy_to_prod_approval
+                  type: HarnessApproval
+                  timeout: 1d
+                  spec:
+                    approvalMessage: |-
+                      Please review the following information
+                      and approve the pipeline progression
+                    includePipelineExecutionHistory: true
+                    approvers:
+                      minimumCount: 1
+                      disallowPipelineExecutor: false
+                      userGroups:
+                        - account._account_all_users
+                    isAutoRejectEnabled: false
+                    approverInputs: []
+        tags: {}
+        when:
+          pipelineStatus: Success
+          condition: <+pipeline.stages.Build_Test_Push.variables.Environment> == "prod"
+    - stage:
+        name: Deploy to ECS
+        identifier: Deploy_Webservice
+        description: ""
+        type: Deployment
+        spec:
+          deploymentType: ECS
+          service:
+            serviceRef: "<+pipeline.stages.Build_Test_Push.variables.Environment == \"staging\" ? \"staging_service\" : \"prod_service\">"
+          environment:
+            environmentRef: staging
+            deployToAll: false
+            infrastructureDefinitions:
+              - identifier: staging_1
+          execution:
+            steps:
+              - step:
+                  name: ECS Rolling Deploy
+                  identifier: ecsRollingDeploy
+                  type: EcsRollingDeploy
+                  timeout: 10m
+                  spec:
+                    sameAsAlreadyRunningInstances: false
+                    forceNewDeployment: false
+                  failureStrategies:
+                    - onFailure:
+                        errors:
+                          - Unknown
+                        action:
+                          type: Retry
+                          spec:
+                            retryCount: 1
+                            retryIntervals:
+                              - 10s
+                            onRetryFailure:
+                              action:
+                                type: MarkAsFailure
+              - stepGroup:
+                  name: Healthcheck
+                  identifier: Healthcheck
+                  steps:
+                    - parallel:
+                        - step:
+                            type: Http
+                            name: App HealthCheck
+                            identifier: App_HealthCheck
+                            spec:
+                              url: http://app.zeitro.us/healthcheck
+                              method: GET
+                              headers: []
+                              inputVariables: []
+                              outputVariables: []
+                              assertion: <+execution.steps.Healthcheck.steps.App_HealthCheck.output.httpResponseCode>== 200
+                            timeout: 10s
+                            failureStrategies:
+                              - onFailure:
+                                  errors:
+                                    - AllErrors
+                                  action:
+                                    type: Ignore
+                        - step:
+                            type: Http
+                            name: Lo HealthCheck
+                            identifier: Lo_HealthCheck
+                            spec:
+                              url: http://lo.zeitro.us/healthcheck
+                              method: GET
+                              headers: []
+                              inputVariables: []
+                              outputVariables: []
+                              assertion: <+execution.steps.Healthcheck.steps.Lo_HealthCheck.output.httpResponseCode>==200
+                            timeout: 10s
+                            failureStrategies:
+                              - onFailure:
+                                  errors:
+                                    - AllErrors
+                                  action:
+                                    type: Ignore
+                  failureStrategies:
+                    - onFailure:
+                        errors:
+                          - AllErrors
+                        action:
+                          type: Ignore
+            rollbackSteps:
+              - step:
+                  name: ECS Rolling Rollback
+                  identifier: ecsRollingRollback
+                  type: EcsRollingRollback
+                  timeout: 10m
+                  spec: {}
+        tags: {}
+        failureStrategies:
+          - onFailure:
+              errors:
+                - AllErrors
+              action:
+                type: StageRollback
+        delegateSelectors:
+          - docker-delegate
+  properties:
+    ci:
+      codebase:
+        connectorRef: org.zeitro
+        build: <+input>
+        prCloneStrategy: SourceBranch
+        submoduleStrategy: "true"
+        sparseCheckout:
+          - web
+          - Contrib
+        depth: 1
+  notificationRules:
+    - name: Email Notify
+      identifier: Email_Notify
+      pipelineEvents:
+        - type: StageSuccess
+          forStages:
+            - Deploy_Webservice
+        - type: PipelineFailed
+      notificationMethod:
+        type: Email
+        spec:
+          userGroups: []
+          recipients:
+            - langran@zeitro.com
+      enabled: true
+    - name: Slack Notify
+      identifier: Slack_Notify
+      pipelineEvents:
+        - type: PipelineStart
+        - type: PipelineSuccess
+        - type: PipelineFailed
+        - type: StageFailed
+          forStages:
+            - AllStages
+        - type: StageStart
+          forStages:
+            - Deploy_Webservice
+            - Approval
+      notificationMethod:
+        type: Slack
+        spec:
+          userGroups: []
+          webhookUrl: <+secrets.getValue("org.Slack_Webhook1")>
+      enabled: true
