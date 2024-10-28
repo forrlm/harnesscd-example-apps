@@ -837,6 +837,8 @@ pipeline:
                         script: |-
                           ls /tmp
 
+                          curl
+
                           cd /skfjsklfj/ksfnsnknl
                     environmentVariables: []
                     outputVariables: []
