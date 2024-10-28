@@ -825,6 +825,74 @@ pipeline:
           execution:
             steps:
               - step:
+                  name: ECS Rolling Deploy
+                  identifier: ecsRollingDeploy
+                  type: EcsRollingDeploy
+                  timeout: 1h
+                  spec:
+                    sameAsAlreadyRunningInstances: false
+                    forceNewDeployment: false
+                  failureStrategies:
+                    - onFailure:
+                        errors:
+                          - Unknown
+                        action:
+                          type: Retry
+                          spec:
+                            retryCount: 1
+                            retryIntervals:
+                              - 10s
+                            onRetryFailure:
+                              action:
+                                type: MarkAsFailure
+              - stepGroup:
+                  name: Healthcheck
+                  identifier: Healthcheck
+                  steps:
+                    - parallel:
+                        - step:
+                            type: Http
+                            name: App HealthCheck
+                            identifier: App_HealthCheck
+                            spec:
+                              url: http://app.zeitro.us/healthcheck
+                              method: GET
+                              headers: []
+                              inputVariables: []
+                              outputVariables: []
+                              assertion: <+execution.steps.Healthcheck.steps.App_HealthCheck.output.httpResponseCode>== 200
+                            timeout: 10s
+                            failureStrategies:
+                              - onFailure:
+                                  errors:
+                                    - AllErrors
+                                  action:
+                                    type: Ignore
+                        - step:
+                            type: Http
+                            name: Lo HealthCheck
+                            identifier: Lo_HealthCheck
+                            spec:
+                              url: http://lo.zeitro.us/healthcheck
+                              method: GET
+                              headers: []
+                              inputVariables: []
+                              outputVariables: []
+                              assertion: <+execution.steps.Healthcheck.steps.Lo_HealthCheck.output.httpResponseCode>==200
+                            timeout: 10s
+                            failureStrategies:
+                              - onFailure:
+                                  errors:
+                                    - AllErrors
+                                  action:
+                                    type: Ignore
+                  failureStrategies:
+                    - onFailure:
+                        errors:
+                          - AllErrors
+                        action:
+                          type: Ignore
+              - step:
                   type: ShellScript
                   name: team Notify
                   identifier: team_Notify
@@ -957,76 +1025,11 @@ pipeline:
                       - name: pipelineStudio
                         type: String
                         value: https://app.harness.io/ng/account/<+account.identifier>/cd/orgs/default/projects/<+project.identifier>/pipelines/<+pipeline.identifier>/pipeline-studio
+                      - name: slackwebhook
+                        type: String
+                        value: <+secrets.getValue("org.team-development-webhook")>
                     outputVariables: []
                   timeout: 10m
-              - step:
-                  name: ECS Rolling Deploy
-                  identifier: ecsRollingDeploy
-                  type: EcsRollingDeploy
-                  timeout: 1h
-                  spec:
-                    sameAsAlreadyRunningInstances: false
-                    forceNewDeployment: false
-                  failureStrategies:
-                    - onFailure:
-                        errors:
-                          - Unknown
-                        action:
-                          type: Retry
-                          spec:
-                            retryCount: 1
-                            retryIntervals:
-                              - 10s
-                            onRetryFailure:
-                              action:
-                                type: MarkAsFailure
-              - stepGroup:
-                  name: Healthcheck
-                  identifier: Healthcheck
-                  steps:
-                    - parallel:
-                        - step:
-                            type: Http
-                            name: App HealthCheck
-                            identifier: App_HealthCheck
-                            spec:
-                              url: http://app.zeitro.us/healthcheck
-                              method: GET
-                              headers: []
-                              inputVariables: []
-                              outputVariables: []
-                              assertion: <+execution.steps.Healthcheck.steps.App_HealthCheck.output.httpResponseCode>== 200
-                            timeout: 10s
-                            failureStrategies:
-                              - onFailure:
-                                  errors:
-                                    - AllErrors
-                                  action:
-                                    type: Ignore
-                        - step:
-                            type: Http
-                            name: Lo HealthCheck
-                            identifier: Lo_HealthCheck
-                            spec:
-                              url: http://lo.zeitro.us/healthcheck
-                              method: GET
-                              headers: []
-                              inputVariables: []
-                              outputVariables: []
-                              assertion: <+execution.steps.Healthcheck.steps.Lo_HealthCheck.output.httpResponseCode>==200
-                            timeout: 10s
-                            failureStrategies:
-                              - onFailure:
-                                  errors:
-                                    - AllErrors
-                                  action:
-                                    type: Ignore
-                  failureStrategies:
-                    - onFailure:
-                        errors:
-                          - AllErrors
-                        action:
-                          type: Ignore
               - step:
                   type: ShellScript
                   name: ShellScript_1
