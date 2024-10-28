@@ -910,7 +910,7 @@ pipeline:
                                 "type": "section",
                                 "text": {
                                   "type": "mrkdwn",
-                                  "text": "*Webserver has been successfully deployed to ${environment}*"
+                                  "text": "*<${pipelineStudio}|Webserver> has been successfully deployed to ${environment}*"
                                 }
                               }
                             ],
@@ -978,6 +978,9 @@ pipeline:
                       - name: executionUrl
                         type: String
                         value: <+pipeline.executionUrl>
+                      - name: pipelineStudio
+                        type: String
+                        value: https://app.harness.io/ng/account/<+account.identifier>/cd/orgs/default/projects/<+project.identifier>/pipelines/<+pipeline.identifier>/pipeline-studio
                     outputVariables: []
                   timeout: 10m
               - step:
