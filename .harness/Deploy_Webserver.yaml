@@ -816,7 +816,7 @@ pipeline:
         spec:
           deploymentType: ECS
           service:
-            serviceRef: "<+pipeline.stages.Build_Test_Push.variables.Environment == \"staging\" ? \"staging_service\" : \"prod_service\">"
+            serviceRef: "<+<+pipeline.stages.Build_Test_Push.variables.Environment> == \"staging\" ? \"staging_service\" : \"prod_service\">"
           environment:
             environmentRef: staging
             deployToAll: false
@@ -964,7 +964,7 @@ pipeline:
                         value: <+pipeline.stages.Deploy_Webservice.spec.execution.steps.ShellScript_3.endTs>
                       - name: accountName
                         type: String
-                        value: "<+account.name.toLowerCase() == \"langran\" ? \"Lang Ran\" : \"YingJie Yu\">"
+                        value: "<+<+account.name> == \"langran\" ? \"Lang Ran\" : \"YingJie Yu\">"
                       - name: executionUrl
                         type: String
                         value: <+pipeline.executionUrl>
