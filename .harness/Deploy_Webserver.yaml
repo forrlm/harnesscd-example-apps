@@ -916,9 +916,9 @@ pipeline:
                             ],
                             "attachments": [
                               {
-                                "title": "Code branch: ${branch}\n${environment} updates: ${updateText}\nDeployed by: ${accountName}\n <${jiraLink}|Jira PM link>\n <${figmaLink}|Figma link>\nStarted $startDate and deployed successfully $endDate. Took ${duration}s.",
+                                "title": "Code branch: ${branch}\n${environment} updates: ${updateText}\nDeployed by: ${accountName}\n <${jiraLink}|Jira PM link>\n <${figmaLink}|Figma link>",
                                 "color": "good",
-                                "text": "*<${executionUrl}|Open Execution>*"
+                                "text": "_Started $startDate and Deployed successfully $endDate. Took ${duration}s._\n*<${executionUrl}|Open Execution>*"
                               }
                             ]
                           }
