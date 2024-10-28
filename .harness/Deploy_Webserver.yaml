@@ -887,7 +887,7 @@ pipeline:
                                 "type": "section",
                                 "text": {
                                   "type": "mrkdwn",
-                                  "text": "* <${pipelineStudio}|Webserver> has been successfully deployed to ${environment} *"
+                                  "text": "* <Webserver has been successfully deployed to ${environment} *"
                                 }
                               }
                             ],
@@ -948,7 +948,7 @@ pipeline:
                         value: <+pipeline.startTs>
                       - name: endTime
                         type: Number
-                        value: <+pipeline.startTs>
+                        value: <+pipeline.stages.Deploy_Webservice.spec.execution.steps.ecsRollingDeploy.endTs>
                       - name: accountName
                         type: String
                         value: "<+<+account.name> == \"langran\" ? \"Lang Ran\" : \"YingJie Yu\">"
