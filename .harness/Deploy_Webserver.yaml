@@ -364,7 +364,7 @@ pipeline:
             type: String
             description: When this field is filled with a value, CI will be skipped and CD will be executed directly, which will pull the image zeitro:<TagName> from ECR
             required: false
-            value: <+input>.default()
+            value: <+input>
         when:
           pipelineStatus: Success
           condition: <+pipeline.stages.Build_Test_Push.variables.TagName> == ""
