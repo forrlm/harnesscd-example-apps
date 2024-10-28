@@ -473,6 +473,7 @@ pipeline:
                         spec:
                           shell: Bash
                           command: |-
+                            sleep 10s
                             source /api-venv/bin/activate
                             cd Dev
 
@@ -800,7 +801,7 @@ pipeline:
         tags: {}
         when:
           pipelineStatus: Success
-          condition: <+pipeline.stages.Build_Test_Push.variables.Environment> == "prod" and <+pipeline.stages.Build_Test_Push.variables.TagName> == ""
+          condition: <+pipeline.stages.Build_Test_Push.variables.Environment> == "prod"
         timeout: 1d
     - stage:
         name: Deploy to ECS
