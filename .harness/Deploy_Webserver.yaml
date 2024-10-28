@@ -834,10 +834,7 @@ pipeline:
                     source:
                       type: Inline
                       spec:
-                        script: |-
-                          echo date(1730103048200, "今天 'at' a h:mm")
-
-                          ls
+                        script: ls
                     environmentVariables: []
                     outputVariables: []
                   timeout: 10m
@@ -853,6 +850,39 @@ pipeline:
                       spec:
                         script: |-
                           #!/bin/bash
+
+                          # 日期转换
+                          convert_timestamp_to_date() {
+                              local timestamp_ms=$1
+
+                              # 将毫秒级时间戳转换为秒级
+                              local timestamp_s=$((timestamp_ms / 1000))
+
+                              # 设置时区为 UTC-8
+                              export TZ="UTC-8"
+
+                              # 获取当前日期和昨天的日期
+                              current_date=$(date +%Y-%m-%d)
+                              yesterday_date=$(date -d "yesterday" +%Y-%m-%d)
+
+                              # 将时间戳转换为日期和时间格式
+                              formatted_date=$(date -d @"$timestamp_s" "+%Y-%m-%d")
+                              formatted_time=$(date -d @"$timestamp_s" "+%p %I:%M" | sed 's/AM/上午/; s/PM/下午/')
+
+                              # 判断是否为今天或昨天
+                              if [ "$current_date" == "$formatted_date" ]; then
+                                  echo "今天 at $formatted_time"
+                              elif [ "$yesterday_date" == "$formatted_date" ]; then
+                                  echo "昨天 at $formatted_time"
+                              else
+                                  echo "$formatted_date at $formatted_time"
+                              fi
+                          }
+
+                          startDate=$(convert_timestamp_to_date ${startTime})
+                          endDate=$(convert_timestamp_to_date ${endTime})
+                          duration= ${startTime}-${endTime}
+
 
                           updateMsgs=("${updateMsg1}" "${updateMsg2}" "${updateMsg3}" "${updateMsg4}") # 可根据需要添加更多
 
@@ -877,7 +907,7 @@ pipeline:
                                   ],
                               "attachments": [
                                   {
-                                      "title": "Code branch: ${branch}\n${environment} updates:\n ${updateText}\n Deployed by: ${accountName}\n <${jiraLink}|Jira PM link>\n <${figmaLink}|Figma link>\n started at <+pipeline.startTs> and deployed successfully at <+pipeline.endTs> duration = ",
+                                      "title": "Code branch: ${branch}\n${environment} updates:\n ${updateText}\n Deployed by: ${accountName}\n <${jiraLink}|Jira PM link>\n <${figmaLink}|Figma link>\n started at ${startDate} and deployed successfully at ${endDate}. Took ${duration}s. ",
                                       "color": "danger",  
                                       "text": "*<${executionUrl}|Open Execution>*",
                               
@@ -920,10 +950,10 @@ pipeline:
                         value: <+secrets.getValue("org.Slack_Webhook1")>
                       - name: startTime
                         type: String
-                        value: <+pipeline.startTs>
+                        value: <+floor(pipeline.startTs / 1000)>
                       - name: endTime
                         type: String
-                        value: <+pipeline.stages.Deploy_Webservice.spec.execution.steps.ShellScript_3.endTs>
+                        value: <+floor(pipeline.stages.Deploy_Webservice.spec.execution.steps.ShellScript_3.endTs / 1000)>
                       - name: accountName
                         type: String
                         value: <+account.identifier>
