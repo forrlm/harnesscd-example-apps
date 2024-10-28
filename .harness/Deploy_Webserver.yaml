@@ -1088,6 +1088,19 @@ pipeline:
           - Contrib
         depth: 1
   notificationRules:
+    - name: team-develpment
+      identifier: teamdevelpment
+      pipelineEvents:
+        - type: StageStart
+          forStages:
+            - Approval
+        - type: PipelineSuccess
+      notificationMethod:
+        type: Slack
+        spec:
+          userGroups: []
+          webhookUrl: <+secrets.getValue("org.team-development-webhook")>
+      enabled: true
     - name: Email Notify
       identifier: Email_Notify
       pipelineEvents:
@@ -1098,7 +1111,7 @@ pipeline:
           userGroups: []
           recipients:
             - langran@zeitro.com
-      enabled: true
+      enabled: false
     - name: Slack Notify
       identifier: Slack_Notify
       pipelineEvents:
