@@ -883,6 +883,7 @@ pipeline:
                           startDate=$(convert_timestamp_to_date ${startTime})
                           endDate=$(convert_timestamp_to_date ${endTime})
                           duration= $(((endTime - startTime) / 1000))
+                          echo ${duration}
 
                           updateMsgs=("${updateMsg1}" "${updateMsg2}" "${updateMsg3}" "${updateMsg4}") 
 
