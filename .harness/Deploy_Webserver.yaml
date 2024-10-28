@@ -389,7 +389,7 @@ pipeline:
           - name: Environment
             type: String
             default: staging
-            description: The environment to be deployed, staging or production
+            description: The environment to be deployed, staging(webserver-staging-cluster) or production(webserver-cluster)
             required: true
             value: <+input>.default(staging).allowedValues(staging,prod)
     - stage:
