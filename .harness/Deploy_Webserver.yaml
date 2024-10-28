@@ -899,7 +899,7 @@ pipeline:
                           updateText=""
                           for i in "${!updateMsgs[@]}"; do
                             if [ -n "${updateMsgs[$i]}" ]; then
-                              updateText+="•    ${updateMsgs[$i]}\n"
+                              updateText+="\n•    ${updateMsgs[$i]}"
                             fi
                           done
 
