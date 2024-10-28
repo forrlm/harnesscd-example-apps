@@ -407,6 +407,9 @@ pipeline:
             description: When this field is filled with a value, CI will be skipped and CD will be executed directly, which will pull the image zeitro:<TagName> from ECR
             required: false
             value: <+input>
+        when:
+          pipelineStatus: Success
+          condition: <+pipeline.stages.Build_Test_Push.variables.TagName> != null
     - stage:
         name: Test-Push
         identifier: TestPush
@@ -804,6 +807,9 @@ pipeline:
                           type: Ignore
           sharedPaths:
             - /var/run
+        when:
+          pipelineStatus: Success
+          condition: <+pipeline.stages.Build_Test_Push.variables.TagName> != null
     - stage:
         name: Approval
         identifier: Approval
@@ -832,7 +838,7 @@ pipeline:
         tags: {}
         when:
           pipelineStatus: Success
-          condition: <+pipeline.stages.Build_Test_Push.variables.Environment> == "prod"
+          condition: <+pipeline.stages.Build_Test_Push.variables.Environment> == "prod" and <+pipeline.stages.Build_Test_Push.variables.TagName> == null
     - stage:
         name: Deploy to ECS
         identifier: Deploy_Webservice
