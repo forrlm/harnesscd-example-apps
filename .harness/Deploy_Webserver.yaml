@@ -896,7 +896,7 @@ pipeline:
                                 "type": "section",
                                 "text": {
                                   "type": "mrkdwn",
-                                  "text": "* Webserver has been successfully deployed to ${environment} *"
+                                  "text": "* <${pipelineStudio}|Webserver> has been successfully deployed to ${environment} *"
                                 }
                               }
                             ],
