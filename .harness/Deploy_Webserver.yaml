@@ -409,7 +409,7 @@ pipeline:
             value: <+input>
         when:
           pipelineStatus: Success
-          condition: <+pipeline.stages.Build_Test_Push.variables.TagName> != null
+          condition: <+pipeline.stages.Build_Test_Push.variables.TagName> == null
     - stage:
         name: Test-Push
         identifier: TestPush
@@ -809,7 +809,7 @@ pipeline:
             - /var/run
         when:
           pipelineStatus: Success
-          condition: <+pipeline.stages.Build_Test_Push.variables.TagName> != null
+          condition: <+pipeline.stages.Build_Test_Push.variables.TagName> == null
     - stage:
         name: Approval
         identifier: Approval
