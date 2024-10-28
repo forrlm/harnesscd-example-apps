@@ -860,7 +860,7 @@ pipeline:
                                   ],
                               "attachments": [
                                   {
-                                      "title": "Code branch: ${branch}\n${environment} updates:\n ${updateText}\n Deployed by: <+account.name>\n <${jiraLink}|Jira PM link>\n <${figmaLink}|Figma link>\n started at <+pipeline.startTs> and deployed successfully at <+pipeline.endTs> duration = ",
+                                      "title": "Code branch: ${branch}\n${environment} updates:\n ${updateText}\n Deployed by: ${accountName}\n <${jiraLink}|Jira PM link>\n <${figmaLink}|Figma link>\n started at <+pipeline.startTs> and deployed successfully at <+pipeline.endTs> duration = ",
                                       "color": "danger",  
                                       "text": "*<${executionUrl}|Open Execution>*",
                               
@@ -907,6 +907,9 @@ pipeline:
                       - name: endTime
                         type: String
                         value: <+pipeline.endTs>
+                      - name: accountName
+                        type: String
+                        value: <+account.identifier>
                     outputVariables: []
                   timeout: 10m
               - step:
