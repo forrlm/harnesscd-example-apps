@@ -792,11 +792,16 @@ pipeline:
                       userGroups:
                         - account._account_all_users
                     isAutoRejectEnabled: false
-                    approverInputs: []
+                    approverInputs:
+                      - name: figmaLink
+                        defaultValue: ""
+                      - name: jiraLink
+                        defaultValue: ""
         tags: {}
         when:
           pipelineStatus: Success
           condition: <+pipeline.stages.Build_Test_Push.variables.Environment> == "prod" and <+pipeline.stages.Build_Test_Push.variables.TagName> == ""
+        timeout: 1d
     - stage:
         name: Deploy to ECS
         identifier: Deploy_Webservice
