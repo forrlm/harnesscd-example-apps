@@ -880,6 +880,15 @@ pipeline:
                             fi
                           done
 
+                          # 检查 jiraLink 和 figmaLink 是否为空，并添加相应的内容
+                          if [ -n "$jiraLink" ]; then
+                              updateText+="\n<${jiraLink}|Jira PM link>"
+                          fi
+
+                          if [ -n "$figmaLink" ]; then
+                              updateText+="\n<${figmaLink}|Figma link>"
+                          fi
+
                           json_payload=$(cat <<EOF
                           {
                             "blocks": [
@@ -901,16 +910,6 @@ pipeline:
                           }
                           EOF
                           )
-
-                          # 检查 jiraLink 和 figmaLink 是否为空，并添加相应的内容
-                          if [ -n "$jiraLink" ]; then
-                              json_payload=$(echo "$json_payload" | sed "s/\"text\": \"/\"text\": \"<${jiraLink}|Jira PM link>\\n/")
-                          fi
-
-                          if [ -n "$figmaLink" ]; then
-                              json_payload=$(echo "$json_payload" | sed "s/\"text\": \"/\"text\": \"<${figmaLink}|Figma link>\\n/")
-                          fi
-
 
                           curl -X POST -H 'Content-type: application/json' \
                           --data "$json_payload" \
