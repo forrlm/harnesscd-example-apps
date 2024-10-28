@@ -847,7 +847,7 @@ pipeline:
         spec:
           deploymentType: ECS
           service:
-            serviceRef: "<+pipeline.stages.Build_Test_Push.variables.Environment == \"staging\" ? \"staging_service\" : \"prod_service\">"
+            serviceRef: staging_service
           environment:
             environmentRef: staging
             deployToAll: false
