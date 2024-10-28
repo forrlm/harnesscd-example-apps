@@ -961,7 +961,28 @@ pipeline:
                           curl -X POST -H 'Content-type: application/json' \
                           --data "$json_payload" \
                           "${slackWebhook1}"
-                    environmentVariables: []
+                    environmentVariables:
+                      - name: branch
+                        type: String
+                        value: <+pipeline.properties.ci.codebase.build.spec.branch>
+                      - name: environment
+                        type: String
+                        value: <+pipeline.stages.Build_Test_Push.variables.Environment>
+                      - name: jiraLink
+                        type: String
+                        value: <+input>
+                      - name: figmaLink
+                        type: String
+                        value: <+input>
+                      - name: updateMsg1
+                        type: String
+                        value: <+input>
+                      - name: updateMsg2
+                        type: String
+                        value: <+input>
+                      - name: updateMsg3
+                        type: String
+                        value: <+input>
                     outputVariables: []
                   timeout: 10m
             rollbackSteps:
