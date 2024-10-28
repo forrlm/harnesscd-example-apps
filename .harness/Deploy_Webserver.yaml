@@ -905,15 +905,6 @@ pipeline:
                         script: |-
                           #!/bin/bash
 
-                          str1="langran"
-                          str2=<+account.name>
-
-                          if [ "$str1" = "$str2" ]; then
-                              echo "Strings are equal"
-                          else
-                              echo "Strings are not equal"
-                          fi
-
                           # 日期转换
                           convert_timestamp_to_date() {
                               local timestamp=$(($1))
@@ -964,7 +955,7 @@ pipeline:
                                 "type": "section",
                                 "text": {
                                   "type": "mrkdwn",
-                                  "text": "* <$"pipelineStudio"}|Webserver> has been successfully deployed to ${environment} *"
+                                  "text": "* <${pipelineStudio}|Webserver> has been successfully deployed to ${environment} *"
                                 }
                               }
                             ],
