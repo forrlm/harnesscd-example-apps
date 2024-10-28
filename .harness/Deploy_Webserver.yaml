@@ -948,7 +948,7 @@ pipeline:
                         value: <+pipeline.startTs>
                       - name: endTime
                         type: Number
-                        value: <+pipeline.stages.Deploy_Webservice.spec.execution.steps.ecsRollingDeploy.endTs>
+                        value: <+pipeline.startTs>
                       - name: accountName
                         type: String
                         value: "<+<+account.name> == \"langran\" ? \"Lang Ran\" : \"YingJie Yu\">"
