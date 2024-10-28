@@ -916,7 +916,7 @@ pipeline:
                             ],
                             "attachments": [
                               {
-                                "title": "Code branch: ${branch}\n${environment} updates: ${updateText}\nDeployed by: ${accountName}\n <${jiraLink}|Jira PM link>\n <${figmaLink}|Figma link>",
+                                "title": "Code branch: ${branch}\n${environment} updates: ${updateText}\nDeployed by: ${accountName}",
                                 "color": "good",
                                 "text": "_Started $startDate and Deployed successfully $endDate._ Took ${duration}s.\n*<${executionUrl}|Open Execution>*"
                               }
@@ -924,6 +924,16 @@ pipeline:
                           }
                           EOF
                           )
+
+                          # 检查 jiraLink 和 figmaLink 是否为空，并添加相应的内容
+                          if [ -n "$jiraLink" ]; then
+                              json_payload=$(echo "$json_payload" | sed "s/\"text\": \"/\"text\": \"<${jiraLink}|Jira PM link>\\n/")
+                          fi
+
+                          if [ -n "$figmaLink" ]; then
+                              json_payload=$(echo "$json_payload" | sed "s/\"text\": \"/\"text\": \"<${figmaLink}|Figma link>\\n/")
+                          fi
+
 
                           curl -X POST -H 'Content-type: application/json' \
                           --data "$json_payload" \
