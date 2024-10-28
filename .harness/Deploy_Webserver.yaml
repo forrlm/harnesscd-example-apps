@@ -826,6 +826,23 @@ pipeline:
             steps:
               - step:
                   type: ShellScript
+                  name: ShellScript_3
+                  identifier: ShellScript_3
+                  spec:
+                    shell: Bash
+                    executionTarget: {}
+                    source:
+                      type: Inline
+                      spec:
+                        script: |-
+                          echo date(1730103048200, "今天 'at' a h:mm")
+
+                          ls
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 10m
+              - step:
+                  type: ShellScript
                   name: team Notify
                   identifier: team_Notify
                   spec:
@@ -906,7 +923,7 @@ pipeline:
                         value: <+pipeline.startTs>
                       - name: endTime
                         type: String
-                        value: <+pipeline.endTs>
+                        value: <+pipeline.stages.Deploy_Webservice.spec.execution.steps.ShellScript_3.endTs>
                       - name: accountName
                         type: String
                         value: <+account.identifier>
