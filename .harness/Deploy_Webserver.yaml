@@ -880,6 +880,9 @@ pipeline:
                               fi
                           }
 
+                          echo ${startTime}
+                          echo ${endTime}
+
                           startDate=$(convert_timestamp_to_date ${startTime})
                           endDate=$(convert_timestamp_to_date ${endTime})
                           duration= ${startTime}-${endTime}
