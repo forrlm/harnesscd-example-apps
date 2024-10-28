@@ -949,10 +949,10 @@ pipeline:
                         type: String
                         value: <+secrets.getValue("org.Slack_Webhook1")>
                       - name: startTime
-                        type: String
+                        type: Number
                         value: <+floor(pipeline.startTs / 1000)>
                       - name: endTime
-                        type: String
+                        type: Number
                         value: <+floor(pipeline.stages.Deploy_Webservice.spec.execution.steps.ShellScript_3.endTs / 1000)>
                       - name: accountName
                         type: String
