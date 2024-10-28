@@ -918,7 +918,7 @@ pipeline:
                               {
                                 "title": "Code branch: ${branch}\n${environment} updates: ${updateText}\nDeployed by: ${accountName}\n <${jiraLink}|Jira PM link>\n <${figmaLink}|Figma link>",
                                 "color": "good",
-                                "text": "_Started $startDate and Deployed successfully $endDate. Took ${duration}s._\n*<${executionUrl}|Open Execution>*"
+                                "text": "_Started $startDate and Deployed successfully $endDate._ Took ${duration}s.\n*<${executionUrl}|Open Execution>*"
                               }
                             ]
                           }
