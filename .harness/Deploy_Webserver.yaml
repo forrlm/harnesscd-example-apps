@@ -910,7 +910,7 @@ pipeline:
                                 "type": "section",
                                 "text": {
                                   "type": "mrkdwn",
-                                  "text": "* <${pipelineStudio}|Webserver> has been successfully deployed to ${environment} *"
+                                  "text": "* <$"pipelineStudio"}|Webserver> has been successfully deployed to ${environment} *"
                                 }
                               }
                             ],
