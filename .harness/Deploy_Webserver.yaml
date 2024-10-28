@@ -828,7 +828,7 @@ pipeline:
                   name: ECS Rolling Deploy
                   identifier: ecsRollingDeploy
                   type: EcsRollingDeploy
-                  timeout: 10m
+                  timeout: 1h
                   spec:
                     sameAsAlreadyRunningInstances: false
                     forceNewDeployment: false
@@ -1056,7 +1056,7 @@ pipeline:
                   name: ECS Rolling Rollback
                   identifier: ecsRollingRollback
                   type: EcsRollingRollback
-                  timeout: 10m
+                  timeout: 1h
                   spec: {}
         tags: {}
         failureStrategies:
