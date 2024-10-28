@@ -835,9 +835,9 @@ pipeline:
                       type: Inline
                       spec:
                         script: |-
-                          ls /tmp
+                          #!/bin/bash
 
-                          curl
+                          curl --version
 
                           cd /skfjsklfj/ksfnsnknl
                     environmentVariables: []
