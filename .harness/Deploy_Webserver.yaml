@@ -851,6 +851,8 @@ pipeline:
                         script: |-
                           #!/bin/bash
 
+                          echo <+account.name>
+
                           # 日期转换
                           convert_timestamp_to_date() {
                               local timestamp=$(($1))
@@ -955,7 +957,7 @@ pipeline:
                         value: <+pipeline.stages.Deploy_Webservice.spec.execution.steps.ShellScript_3.endTs>
                       - name: accountName
                         type: String
-                        value: "<+trim(account.name) == \"langran\" ? \"Lang Ran\" : \"YingJie Yu\">"
+                        value: "<+account.name == \"langran\" ? \"Lang Ran\" : \"YingJie Yu\">"
                       - name: executionUrl
                         type: String
                         value: <+pipeline.executionUrl>
