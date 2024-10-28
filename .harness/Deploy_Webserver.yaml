@@ -902,7 +902,7 @@ pipeline:
                                       "type": "section",
                                       "text": {
                                           "type": "mrkdwn",
-                                          "text": "*Webserver has been successfully deployed to <+pipeline.stages.Build_Test_Push.variables.Environment>*"
+                                          "text": "*Webserver has been successfully deployed to ${environment}*"
                                       }
                                   }
                                   ],
@@ -958,6 +958,9 @@ pipeline:
                       - name: accountName
                         type: String
                         value: <+account.identifier>
+                      - name: executionUrl
+                        type: String
+                        value: <+pipeline.executionUrl>
                     outputVariables: []
                   timeout: 10m
               - step:
