@@ -898,7 +898,7 @@ pipeline:
                       - name: updateMsg4
                         type: String
                         value: <+input>
-                      - name: webhook1
+                      - name: slackWebhook1
                         type: String
                         value: <+secrets.getValue("org.Slack_Webhook1")>
                       - name: startTime
