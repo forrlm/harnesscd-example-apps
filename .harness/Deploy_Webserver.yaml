@@ -880,19 +880,11 @@ pipeline:
                               fi
                           }
 
-                          echo ${startTime}
-                          echo ${endTime}
-
                           startDate=$(convert_timestamp_to_date ${startTime})
                           endDate=$(convert_timestamp_to_date ${endTime})
-                          duration= $((startTime-endTime))
+                          duration= $(((endTime - startTime) / 1000))
 
-                          echo ${startDate}
-                          echo ${endDate}
-                          echo ${duration}
-
-
-                          updateMsgs=("${updateMsg1}" "${updateMsg2}" "${updateMsg3}" "${updateMsg4}") # 可根据需要添加更多
+                          updateMsgs=("${updateMsg1}" "${updateMsg2}" "${updateMsg3}" "${updateMsg4}") 
 
                           # 构建带序号和缩进的更新消息字符串
                           updateText=""
@@ -916,7 +908,7 @@ pipeline:
                               "attachments": [
                                   {
                                       "title": "Code branch: ${branch}\n${environment} updates: ${updateText}\n Deployed by: ${accountName}\n <${jiraLink}|Jira PM link>\n <${figmaLink}|Figma link>\n started $startDate and deployed successfully $endDate. Took ${duration}s. ",
-                                      "color": "danger",  
+                                      "color": "danger",
                                       "text": "*<${executionUrl}|Open Execution>*",
                               
                                   }
