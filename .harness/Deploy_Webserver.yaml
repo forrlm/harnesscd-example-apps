@@ -826,6 +826,91 @@ pipeline:
             steps:
               - step:
                   type: ShellScript
+                  name: team Notify
+                  identifier: team_Notify
+                  spec:
+                    shell: Bash
+                    executionTarget: {}
+                    source:
+                      type: Inline
+                      spec:
+                        script: |-
+                          #!/bin/bash
+
+                          updateMsgs=("${updateMsg1}" "${updateMsg2}" "${updateMsg3}" "${updateMsg4}") # 可根据需要添加更多
+
+                          # 构建带序号和缩进的更新消息字符串
+                          updateText=""
+                          for i in "${!updateMsgs[@]}"; do
+                            if [ -n "${updateMsgs[$i]}" ]; then
+                              updateText+="•    ${updateMsgs[$i]}\n"
+                            fi
+                          done
+
+                          json_payload=$(cat <<EOF
+                          {
+                            "blocks": [
+                                  {
+                                      "type": "section",
+                                      "text": {
+                                          "type": "mrkdwn",
+                                          "text": "*Webserver has been successfully deployed to <+pipeline.stages.Build_Test_Push.variables.Environment>*"
+                                      }
+                                  }
+                                  ],
+                              "attachments": [
+                                  {
+                                      "title": "Code branch: ${branch}\n${environment} updates:\n ${updateText}\n Deployed by: <+account.name>\n <${jiraLink}|Jira PM link>\n <${figmaLink}|Figma link>\n started at <+pipeline.startTs> and deployed successfully at <+pipeline.endTs> duration = ",
+                                      "color": "danger",  
+                                      "text": "*<${executionUrl}|Open Execution>*",
+                              
+                                  }
+                              ]
+                          }
+                          EOF
+                          )
+
+                          curl -X POST -H 'Content-type: application/json' \
+                          --data "$json_payload" \
+                          "${slackWebhook1}"
+                    environmentVariables:
+                      - name: branch
+                        type: String
+                        value: <+pipeline.properties.ci.codebase.build.spec.branch>
+                      - name: environment
+                        type: String
+                        value: <+pipeline.stages.Build_Test_Push.variables.Environment>
+                      - name: jiraLink
+                        type: String
+                        value: <+input>
+                      - name: figmaLink
+                        type: String
+                        value: <+input>
+                      - name: updateMsg1
+                        type: String
+                        value: <+input>
+                      - name: updateMsg2
+                        type: String
+                        value: <+input>
+                      - name: updateMsg3
+                        type: String
+                        value: <+input>
+                      - name: updateMsg4
+                        type: String
+                        value: <+input>
+                      - name: webhook1
+                        type: String
+                        value: <+secrets.getValue("org.Slack_Webhook1")>
+                      - name: startTime
+                        type: String
+                        value: <+pipeline.startTs>
+                      - name: endTime
+                        type: String
+                        value: <+pipeline.endTs>
+                    outputVariables: []
+                  timeout: 10m
+              - step:
+                  type: ShellScript
                   name: ShellScript_1
                   identifier: ShellScript_1
                   spec:
@@ -915,76 +1000,6 @@ pipeline:
                           - AllErrors
                         action:
                           type: Ignore
-              - step:
-                  type: ShellScript
-                  name: team Notify
-                  identifier: team_Notify
-                  spec:
-                    shell: Bash
-                    executionTarget: {}
-                    source:
-                      type: Inline
-                      spec:
-                        script: |-
-                          #!/bin/bash
-
-
-                          # 生成 additional_info 信息
-                          additional_info="Took: ${total_time}"
-                          if [ -n "$timeout_request" ]; then
-                              additional_info="${additional_info}\nWarning: ${timeout_request}"
-                          fi
-
-                          json_payload=$(cat <<EOF
-                          {
-                            "blocks": [
-                                  {
-                                      "type": "section",
-                                      "text": {
-                                          "type": "mrkdwn",
-                                          "text": "*Webserver has been successfully deployed to <+pipeline.stages.Build_Test_Push.variables.Environment>*"
-                                      }
-                                  }
-                                  ],
-                              "attachments": [
-                                  {
-                                      "title": "Branch: <${pipelineStudio}|${pipelineName}>\n Step Stage: ${stepName}\nTriggered by: <+account.name>>\nPassed: ${total_passed}, Failed: ${total_failed}, ${additional_info}",
-                                      "color": "danger",  
-                                      "text": "*<${executionUrl}|Open Execution>*",
-                              
-                                  }
-                              ]
-                          }
-                          EOF
-                          )
-
-                          curl -X POST -H 'Content-type: application/json' \
-                          --data "$json_payload" \
-                          "${slackWebhook1}"
-                    environmentVariables:
-                      - name: branch
-                        type: String
-                        value: <+pipeline.properties.ci.codebase.build.spec.branch>
-                      - name: environment
-                        type: String
-                        value: <+pipeline.stages.Build_Test_Push.variables.Environment>
-                      - name: jiraLink
-                        type: String
-                        value: <+input>
-                      - name: figmaLink
-                        type: String
-                        value: <+input>
-                      - name: updateMsg1
-                        type: String
-                        value: <+input>
-                      - name: updateMsg2
-                        type: String
-                        value: <+input>
-                      - name: updateMsg3
-                        type: String
-                        value: <+input>
-                    outputVariables: []
-                  timeout: 10m
             rollbackSteps:
               - step:
                   name: ECS Rolling Rollback
