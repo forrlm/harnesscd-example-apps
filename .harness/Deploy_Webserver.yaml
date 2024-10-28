@@ -851,7 +851,14 @@ pipeline:
                         script: |-
                           #!/bin/bash
 
-                          echo <+account.name>
+                          str1="langran"
+                          str2=<+account.name>
+
+                          if [ "$str1" = "$str2" ]; then
+                              echo "Strings are equal"
+                          else
+                              echo "Strings are not equal"
+                          fi
 
                           # 日期转换
                           convert_timestamp_to_date() {
@@ -957,7 +964,7 @@ pipeline:
                         value: <+pipeline.stages.Deploy_Webservice.spec.execution.steps.ShellScript_3.endTs>
                       - name: accountName
                         type: String
-                        value: "<+account.name == 'langran' ? 'Lang Ran' : 'YingJie Yu'>"
+                        value: <+account.name>
                       - name: executionUrl
                         type: String
                         value: <+pipeline.executionUrl>
