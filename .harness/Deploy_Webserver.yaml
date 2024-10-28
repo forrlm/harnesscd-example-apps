@@ -957,7 +957,7 @@ pipeline:
                         value: <+pipeline.stages.Deploy_Webservice.spec.execution.steps.ShellScript_3.endTs>
                       - name: accountName
                         type: String
-                        value: <+account.identifier>
+                        value: <+account.name>
                       - name: executionUrl
                         type: String
                         value: <+pipeline.executionUrl>
