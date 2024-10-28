@@ -837,6 +837,8 @@ pipeline:
                         script: |-
                           #!/bin/bash
 
+                          echo <+pipeline.properties.ci.codebase.build.spec.branch>
+
                           curl --version
 
                           cd /skfjsklfj/ksfnsnknl
@@ -913,6 +915,55 @@ pipeline:
                           - AllErrors
                         action:
                           type: Ignore
+              - step:
+                  type: ShellScript
+                  name: team Notify
+                  identifier: team_Notify
+                  spec:
+                    shell: Bash
+                    executionTarget: {}
+                    source:
+                      type: Inline
+                      spec:
+                        script: |-
+                          #!/bin/bash
+
+
+                          # 生成 additional_info 信息
+                          additional_info="Took: ${total_time}"
+                          if [ -n "$timeout_request" ]; then
+                              additional_info="${additional_info}\nWarning: ${timeout_request}"
+                          fi
+
+                          json_payload=$(cat <<EOF
+                          {
+                            "blocks": [
+                                  {
+                                      "type": "section",
+                                      "text": {
+                                          "type": "mrkdwn",
+                                          "text": "*Webserver has been successfully deployed to <+pipeline.stages.Build_Test_Push.variables.Environment>*"
+                                      }
+                                  }
+                                  ],
+                              "attachments": [
+                                  {
+                                      "title": "Branch: <${pipelineStudio}|${pipelineName}>\n Step Stage: ${stepName}\nTriggered by: <+account.name>>\nPassed: ${total_passed}, Failed: ${total_failed}, ${additional_info}",
+                                      "color": "danger",  
+                                      "text": "*<${executionUrl}|Open Execution>*",
+                              
+                                  }
+                              ]
+                          }
+                          EOF
+                          )
+
+                          curl -X POST -H 'Content-type: application/json' \
+                          --data "$json_payload" \
+                          "${slackWebhook1}"
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 10m
             rollbackSteps:
               - step:
                   name: ECS Rolling Rollback
