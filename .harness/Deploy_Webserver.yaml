@@ -1015,7 +1015,7 @@ pipeline:
                         value: <+pipeline.startTs>
                       - name: endTime
                         type: Number
-                        value: <+pipeline.startTs>
+                        value: <+pipeline.stages.Deploy_Webservice.spec.execution.steps.ecsRollingDeploy.endTs>
                       - name: accountName
                         type: String
                         value: "<+<+account.name> == \"langran\" ? \"Lang Ran\" : \"YingJie Yu\">"
@@ -1029,29 +1029,6 @@ pipeline:
                         type: String
                         value: <+secrets.getValue("org.team-development-webhook")>
                     outputVariables: []
-                  timeout: 10m
-              - step:
-                  type: ShellScript
-                  name: ShellScript_1
-                  identifier: ShellScript_1
-                  spec:
-                    shell: Bash
-                    executionTarget: {}
-                    source:
-                      type: Inline
-                      spec:
-                        script: |-
-                          #!/bin/bash
-
-                          echo <+pipeline.properties.ci.codebase.build.spec.branch>
-
-                          curl --version
-
-                          cd /skfjsklfj/ksfnsnknl
-                    environmentVariables: []
-                    outputVariables: []
-                    delegateSelectors:
-                      - docker-delegate
                   timeout: 10m
             rollbackSteps:
               - step:
