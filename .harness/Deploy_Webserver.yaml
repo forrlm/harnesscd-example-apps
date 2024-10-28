@@ -312,37 +312,6 @@ pipeline:
                                 #!/bin/bash
 
                                 cp ./web/go/scripts/Dockerfile ./
-                        - step:
-                            type: Run
-                            name: Remove local Image
-                            identifier: Remove_local_Image
-                            spec:
-                              shell: Bash
-                              command: |-
-                                #!/bin/bash
-
-                                #停止正在运行的容器
-                                container_id=$(sudo docker ps -q -f name=webserver_local)
-                                if [ -n "$container_id" ]; then
-                                    sudo docker stop "$container_id"
-                                else
-                                    echo "Container 'webserver_local' is not running."
-                                fi
-
-                                # 去重
-                                zeitro=$(sudo docker images webserver_local -q | sort -u)
-
-                                # 检查 zeitro 变量是否为空，然后逐个删除镜像
-                                if [ -z "$zeitro" ]; then
-                                    echo "No webserver_local image found."
-                                else
-                                    echo "Removing webserver_local images with IDs:"
-                                    for id in $zeitro; do
-                                        echo "$id"
-                                        sudo docker rmi -f "$id"
-                                    done
-                                fi
-                            description: remove zeitro image
               - step:
                   type: BuildAndPushDockerRegistry
                   name: Build Image
