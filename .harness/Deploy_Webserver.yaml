@@ -394,9 +394,10 @@ pipeline:
             value: <+input>.default(staging).allowedValues(staging,prod)
           - name: TagName
             type: String
+            default: "null"
             description: When this field is filled with a value, CI will be skipped and CD will be executed directly, which will pull the image zeitro:<TagName> from ECR
             required: false
-            value: <+input>
+            value: <+input>.default(null)
     - stage:
         name: Test-Push
         identifier: TestPush
