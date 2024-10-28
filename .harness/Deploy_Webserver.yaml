@@ -1092,6 +1092,7 @@ pipeline:
         - type: StageStart
           forStages:
             - Approval
+        - type: PipelineStart
       notificationMethod:
         type: Slack
         spec:
