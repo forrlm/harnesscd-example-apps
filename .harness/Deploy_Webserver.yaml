@@ -842,6 +842,8 @@ pipeline:
                           cd /skfjsklfj/ksfnsnknl
                     environmentVariables: []
                     outputVariables: []
+                    delegateSelectors:
+                      - docker-delegate
                   timeout: 10m
               - step:
                   name: ECS Rolling Deploy
