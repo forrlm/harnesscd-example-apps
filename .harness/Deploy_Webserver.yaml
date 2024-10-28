@@ -853,7 +853,7 @@ pipeline:
 
                           # 日期转换
                           convert_timestamp_to_date() {
-                              local timestamp=$1
+                              local timestamp=$(($1))
 
                               if [ ${#timestamp} -ge 13 ]; then
                                   timestamp_s=$((timestamp / 1000))
