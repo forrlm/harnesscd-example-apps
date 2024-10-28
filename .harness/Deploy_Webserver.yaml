@@ -853,10 +853,11 @@ pipeline:
 
                           # 日期转换
                           convert_timestamp_to_date() {
-                              local timestamp_ms=$1
+                              local timestamp=$1
 
-                              # 将毫秒级时间戳转换为秒级
-                              local timestamp_s=$((timestamp_ms / 1000))
+                              if [ ${#timestamp} -ge 13 ]; then
+                                  timestamp_s=$((timestamp / 1000))
+                              fi
 
                               # 设置时区为 UTC-8
                               export TZ="UTC-8"
