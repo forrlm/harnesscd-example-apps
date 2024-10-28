@@ -896,7 +896,7 @@ pipeline:
                                 "type": "section",
                                 "text": {
                                   "type": "mrkdwn",
-                                  "text": "* <${pipelineStudio}|Webserver> has been successfully deployed to ${environment} *"
+                                  "text": "*<${pipelineStudio}|Webserver> has been successfully deployed to ${environment}*"
                                 }
                               }
                             ],
@@ -904,7 +904,7 @@ pipeline:
                               {
                                 "title": "Code branch: ${branch}\n${environment} updates: ${updateText}\nDeployed by: ${accountName}",
                                 "color": "good",
-                                "text": "_Started $startDate and Deployed successfully $endDate._ Took ${duration}s.\n*<${executionUrl}|Open Execution>*"
+                                "text": "_Started $startDate and Deployed successfully $endDate._ Took ${duration}s.\n<${executionUrl}|Open Execution>*"
                               }
                             ]
                           }
