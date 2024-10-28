@@ -964,7 +964,7 @@ pipeline:
                         value: <+pipeline.stages.Deploy_Webservice.spec.execution.steps.ShellScript_3.endTs>
                       - name: accountName
                         type: String
-                        value: "<+account.name> == \"langran\" ? \"Lang Ran\" : \"YingJie Yu\""
+                        value: "<+account.name == \"langran\" ? \"Lang Ran\" : \"YingJie Yu\">"
                       - name: executionUrl
                         type: String
                         value: <+pipeline.executionUrl>
