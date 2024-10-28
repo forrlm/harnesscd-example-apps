@@ -885,7 +885,7 @@ pipeline:
 
                           startDate=$(convert_timestamp_to_date ${startTime})
                           endDate=$(convert_timestamp_to_date ${endTime})
-                          duration= ${startTime}-${endTime}
+                          duration= $((startTime-endTime))
 
                           echo ${startDate}
                           echo ${endDate}
