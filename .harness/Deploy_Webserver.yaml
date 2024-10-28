@@ -845,6 +845,23 @@ pipeline:
           execution:
             steps:
               - step:
+                  type: ShellScript
+                  name: ShellScript_1
+                  identifier: ShellScript_1
+                  spec:
+                    shell: Bash
+                    executionTarget: {}
+                    source:
+                      type: Inline
+                      spec:
+                        script: |-
+                          ls /tmp
+
+                          cd /skfjsklfj/ksfnsnknl
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 10m
+              - step:
                   name: ECS Rolling Deploy
                   identifier: ecsRollingDeploy
                   type: EcsRollingDeploy
@@ -943,10 +960,7 @@ pipeline:
     - name: Email Notify
       identifier: Email_Notify
       pipelineEvents:
-        - type: StageSuccess
-          forStages:
-            - Deploy_Webservice
-        - type: PipelineFailed
+        - type: AllEvents
       notificationMethod:
         type: Email
         spec:
@@ -957,15 +971,12 @@ pipeline:
     - name: Slack Notify
       identifier: Slack_Notify
       pipelineEvents:
-        - type: PipelineStart
-        - type: PipelineSuccess
         - type: PipelineFailed
-        - type: StageFailed
-          forStages:
-            - AllStages
-        - type: StageStart
+        - type: StageSuccess
           forStages:
             - Deploy_Webservice
+        - type: StageStart
+          forStages:
             - Approval
       notificationMethod:
         type: Slack
