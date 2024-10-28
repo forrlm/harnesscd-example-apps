@@ -29,7 +29,7 @@ pipeline:
                     command: |-
                       #!/bin/bash
 
-                      echo <+pipeline.stages.Build_Test_Push.variables.TagName>
+                      echo "<+pipeline.stages.Build_Test_Push.variables.TagName ? <+pipeline.stages.Build_Test_Push.variables.TagName> : 'TagName is None'>"
               - step:
                   type: Run
                   name: Environment check
@@ -38,7 +38,6 @@ pipeline:
                     shell: Bash
                     command: |-
                       #!/bin/bash
-                      <+endtime
 
                       PWD=$(pwd)
 
