@@ -898,22 +898,21 @@ pipeline:
                           json_payload=$(cat <<EOF
                           {
                             "blocks": [
-                                  {
-                                      "type": "section",
-                                      "text": {
-                                          "type": "mrkdwn",
-                                          "text": "*Webserver has been successfully deployed to ${environment}*"
-                                      }
-                                  }
-                                  ],
-                              "attachments": [
-                                  {
-                                      "title": "Code branch: ${branch}\n${environment} updates: ${updateText}\n Deployed by: ${accountName}\n <${jiraLink}|Jira PM link>\n <${figmaLink}|Figma link>\n started $startDate and deployed successfully $endDate. Took ${duration}s. ",
-                                      "color": "good",
-                                      "text": "*<${executionUrl}|Open Execution>*",
-                              
-                                  }
-                              ]
+                              {
+                                "type": "section",
+                                "text": {
+                                  "type": "mrkdwn",
+                                  "text": "*Webserver has been successfully deployed to ${environment}*"
+                                }
+                              }
+                            ],
+                            "attachments": [
+                              {
+                                "title": "Code branch: ${branch}\n${environment} updates: ${updateText}\nDeployed by: ${accountName}\n <${jiraLink}|Jira PM link>\n <${figmaLink}|Figma link>\nStarted $startDate and deployed successfully $endDate. Took ${duration}s.",
+                                "color": "good",
+                                "text": "*<${executionUrl}|Open Execution>*"
+                              }
+                            ]
                           }
                           EOF
                           )
