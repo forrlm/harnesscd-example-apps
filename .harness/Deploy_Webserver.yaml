@@ -22,17 +22,6 @@ pipeline:
             steps:
               - step:
                   type: Run
-                  name: Run_12
-                  identifier: Run_12
-                  spec:
-                    shell: Bash
-                    command: |-
-                      #!/bin/bash
-                      echo <+pipeline.stages.Build_Test_Push.variables.TagName>
-
-                      echo <+pipeline.stages.Build_Test_Push.variables.TagName == null ? <+pipeline.stages.Build_Test_Push.variables.TagName> : 'TagName is None'>
-              - step:
-                  type: Run
                   name: Environment check
                   identifier: environment_check
                   spec:
