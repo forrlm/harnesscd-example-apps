@@ -884,6 +884,10 @@ pipeline:
                           endDate=$(convert_timestamp_to_date ${endTime})
                           duration= ${startTime}-${endTime}
 
+                          echo ${startDate}
+                          echo ${endDate}
+                          echo ${duration}
+
 
                           updateMsgs=("${updateMsg1}" "${updateMsg2}" "${updateMsg3}" "${updateMsg4}") # 可根据需要添加更多
 
