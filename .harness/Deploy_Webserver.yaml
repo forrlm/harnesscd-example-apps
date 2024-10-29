@@ -1030,6 +1030,19 @@ pipeline:
                         value: <+secrets.getValue("org.team-development-webhook")>
                     outputVariables: []
                   timeout: 10m
+                  failureStrategies:
+                    - onFailure:
+                        errors:
+                          - AllErrors
+                        action:
+                          type: Retry
+                          spec:
+                            retryCount: 1
+                            retryIntervals:
+                              - 10s
+                            onRetryFailure:
+                              action:
+                                type: Ignore
             rollbackSteps:
               - step:
                   name: ECS Rolling Rollback
