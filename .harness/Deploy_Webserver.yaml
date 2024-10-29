@@ -873,7 +873,7 @@ pipeline:
                             name: Lo HealthCheck
                             identifier: Lo_HealthCheck
                             spec:
-                              url: http://lo.zeitro.us/healthcheck
+                              url: "http://app.zeitro.<+<+pipeline.stages.Build_Test_Push.variables.Environment> == \"staging\" ? \"us\" : \"com\">/healthcheck"
                               method: GET
                               headers: []
                               inputVariables: []
