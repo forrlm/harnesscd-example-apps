@@ -367,7 +367,7 @@ pipeline:
             value: <+input>
         when:
           pipelineStatus: Success
-          condition: ""
+          condition: <+pipeline.stages.Build_Test_Push.variables.TagName> == ""
     - stage:
         name: Test-Push
         identifier: TestPush
