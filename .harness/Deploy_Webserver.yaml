@@ -29,10 +29,10 @@ pipeline:
                     command: |-
                       #!/bin/bash
 
-                      echo <+<+pipeline.stages.Build_Test_Push.variables.TagName> == null ? "harness-webserver-<+pipeline.sequenceId>" : <+pipeline.stages.Build_Test_Push.variables.TagName>>
+                      echo <+<+pipeline.stages.Build_Test_Push.variables.TagName> == "" ? "harness-webserver-<+pipeline.sequenceId>" : <+pipeline.stages.Build_Test_Push.variables.TagName>>
 
                       echo "123324"
-                      echo <<+pipeline.stages.Build_Test_Push.variables.Environment> == "staging" ? "webserver-staging-cluster" : "webserver-cluster">
+                      echo <+<+pipeline.stages.Build_Test_Push.variables.Environment> == "staging" ? "webserver-staging-cluster" : "webserver-cluster">
               - step:
                   type: Run
                   name: Environment check
