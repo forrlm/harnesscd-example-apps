@@ -855,7 +855,7 @@ pipeline:
                             name: App HealthCheck
                             identifier: App_HealthCheck
                             spec:
-                              url: http://app.zeitro.us/healthcheck
+                              url: "http://app.zeitro.<+<+pipeline.stages.Build_Test_Push.variables.Environment> == \"staging\" ? \"us\" : \"com\">/healthcheck"
                               method: GET
                               headers: []
                               inputVariables: []
