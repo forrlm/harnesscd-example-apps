@@ -22,19 +22,6 @@ pipeline:
             steps:
               - step:
                   type: Run
-                  name: Run_11
-                  identifier: Run_11
-                  spec:
-                    shell: Bash
-                    command: |-
-                      #!/bin/bash
-
-                      echo <+<+pipeline.stages.Build_Test_Push.variables.TagName> == "" ? "harness-webserver-<+pipeline.sequenceId>" : <+pipeline.stages.Build_Test_Push.variables.TagName>>
-
-                      echo "123324"
-                      echo <+<+pipeline.stages.Build_Test_Push.variables.Environment> == "staging" ? "webserver-staging-cluster" : "webserver-cluster">
-              - step:
-                  type: Run
                   name: Environment check
                   identifier: environment_check
                   spec:
