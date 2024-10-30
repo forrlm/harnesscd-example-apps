@@ -327,6 +327,8 @@ pipeline:
                       git.branch: $(git branch --show-current)
                       git.commit: $(git rev-parse HEAD)
                       harness.buildID: <+pipeline.sequenceId>
+                    buildArgs:
+                      platform: linux/amd64
                   failureStrategies:
                     - onFailure:
                         errors:
