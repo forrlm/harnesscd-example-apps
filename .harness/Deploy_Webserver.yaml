@@ -785,7 +785,7 @@ pipeline:
           execution:
             steps:
               - step:
-                  name: deploy to prod approval
+                  name: deploy approval
                   identifier: deploy_to_prod_approval
                   type: HarnessApproval
                   timeout: 1d
