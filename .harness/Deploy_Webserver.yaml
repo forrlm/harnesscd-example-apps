@@ -808,7 +808,6 @@ pipeline:
         tags: {}
         when:
           pipelineStatus: Success
-          condition: "<+pipeline.stages.Build_Test_Push.variables.Environment> == \"prod\" "
         timeout: 1d
     - stage:
         name: Deploy to ECS
